@@ -48,8 +48,9 @@ Director.audio  → ListToAudio → VHS_VideoCombine.audio
 
 `workflows/` 目录提供一条可直接跑的 MiniMax H3 三段拼接工作流（1080p，示例含动作音效、无台词，可按需改提示词）：
 
-- `workflows/minimax_h3_3seg_15s_1080p_audio.json`
-- `workflows/minimax_h3_3seg_15s_1080p_audio.png`（带内嵌工作流，直接拖进 ComfyUI）
+- `workflows/三段拼合视频生成工作流.png`（带内嵌工作流，**直接拖进 ComfyUI**）
+- `workflows/三段拼合视频生成工作流.json`
+- 等价英文名：`workflows/minimax_h3_3seg_15s_1080p_audio.png` / `.json`
 
 原理：16G 显存无法 1080p 直出 10 秒以上，所以拆成 3 × 5 秒分段生成，自动取上一段第 123 帧作为下一段首帧（硬锁定、衔接无缝），最后拼接成 372 帧输出。
 
