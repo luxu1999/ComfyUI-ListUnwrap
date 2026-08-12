@@ -93,10 +93,17 @@ python scripts/prepare_char_ref.py 你的角色图.png 陈千语_mid20.png 0.20
 # 输出文件放到 ComfyUI/input/
 ```
 
-## 5. 放入工作流
+## 5. 放入工作流（本仓库提供两份，任选其一）
 
-- `workflows/minimax_h3_3seg_15s_1080p_audio.json`（API 版）
-- `workflows/minimax_h3_3seg_15s_1080p_audio.png`（带内嵌工作流，直接拖进 ComfyUI）
+**推荐直接下载这两个文件**（同一套「三段拼合视频生成工作流」）：
+
+- `workflows/三段拼合视频生成工作流.png`（带内嵌工作流，**直接拖进 ComfyUI 即可加载**）
+- `workflows/三段拼合视频生成工作流.json`（前端格式，ComfyUI 打开/导入用）
+
+等价文件（英文名，方便脚本/命令行下载）：
+
+- `workflows/minimax_h3_3seg_15s_1080p_audio.png`
+- `workflows/minimax_h3_3seg_15s_1080p_audio.json`
 
 打开后检查：
 
