@@ -39,14 +39,14 @@ Director.audio  → ListToAudio → VHS_VideoCombine.audio
 第一段批次 + 第二段批次 → ConcatImageBatches → 248帧 → VHS_VideoCombine.images
 ```
 
-更完整的「3 段拼接 + 首帧锁定 + 固定机位 + 动作音效」工作流，见仓库配套说明与提示词指南。
+更完整的「3 段拼接 + 首帧锁定」工作流（示例风格：固定机位、动作音效，均可按需调整），见仓库配套说明与提示词指南。
 
 
 > 注意：下面的三段拼接工作流还依赖打了补丁的 `ComfyUI_MiniMaxH3_Director`，补丁见下文。
 
 ## 配套工作流（3 × 5 秒 → 15 秒）
 
-`workflows/` 目录提供一条可直接跑的 MiniMax H3 三段拼接工作流（1080p，含动作音效、无台词）：
+`workflows/` 目录提供一条可直接跑的 MiniMax H3 三段拼接工作流（1080p，示例含动作音效、无台词，可按需改提示词）：
 
 - `workflows/minimax_h3_3seg_15s_1080p_audio.json`
 - `workflows/minimax_h3_3seg_15s_1080p_audio.png`（带内嵌工作流，直接拖进 ComfyUI）
