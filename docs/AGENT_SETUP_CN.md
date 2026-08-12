@@ -34,6 +34,10 @@ git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git
 
 ```bash
 pip install -r ComfyUI_MiniMaxH3_Director/requirements.txt
+```bash
+# 4) SageAttention（KJ 的 Sage 节点需要；必须 1.x，2.x 与 H3 不兼容会崩）
+pip install sageattention==1.0.6
+```
 ```
 
 ## 2. 给导演台打两个补丁（关键！）
@@ -57,6 +61,8 @@ python patches/apply_patches.py D:/path/to/ComfyUI
 脚本会做精确字符串替换并打印 `[OK]` / `[SKIP]`。也可以用 `patches/01_*.patch` / `02_*.patch` 手动 `git apply` 或 `patch -p1`。
 
 **打完补丁必须重启 ComfyUI。**
+
+> 版本说明：补丁在 ComfyUI 0.31.x 上验证。如果你用的是 0.40+ 的新前端，autogrow 可能原生兼容，可先只打补丁 2（连续性）试跑，报 Combine 错误再打补丁 1。
 
 ## 3. 模型与 LoRA（放到对应目录）
 
@@ -85,7 +91,20 @@ python patches/apply_patches.py D:/path/to/ComfyUI
 - 三个 `MiniMaxH3Director` 节点已加载（补丁后）
 - 提示词按 `docs/通用提示词填写方法.md` 填写或替换
 
-## 5. 运行与耗时
+## 5. 启动参数（重要）
+
+启动 ComfyUI 时：
+
+- **不要加全局 `--use-sage-attention`**：H3 会被全局 Sage 补丁污染，输出纯噪声（本工作流用 KJ 节点的 Sage 补丁即可）
+- 建议设置环境变量 `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`，降低显存碎片、提高 1080p 稳定性
+
+```bash
+# Windows PowerShell 示例
+$env:PYTORCH_CUDA_ALLOC_CONF = "expandable_segments:True"
+python main.py --preview-method auto --disable-cuda-malloc
+```
+
+## 6. 运行与耗时
 
 一次 Queue 全自动完成：三段生成 → 自动取第 123 帧 → 拼接 372 帧 → 保存视频 + 工作流 PNG。
 
@@ -95,7 +114,7 @@ python patches/apply_patches.py D:/path/to/ComfyUI
 | 720p | 1280×736 | 124 | 4 | ≈ 8–10 分钟 |
 | 1080p | 1920×1088 | 124 | 第一段 8、后两段 4 | ≈ 31–33 分钟 |
 
-## 6. 常见问题
+## 7. 常见问题
 
 | 现象 | 原因 / 处理 |
 |---|---|
@@ -105,7 +124,7 @@ python patches/apply_patches.py D:/path/to/ComfyUI
 | 1080p 直出爆显存 | 这是本方案要绕开的问题，用分段方案即可 |
 | 画面出现多余玩偶/道具 | 提示词里用「桌面物品白名单」约束（见提示词指南） |
 
-## 7. 补丁内容速览（人类可读）
+## 8. 补丁内容速览（人类可读）
 
 **补丁 1**：`nodes/director_groups.py` 的 `MiniMaxH3DirectorGroupsCombine.execute` 改为兼容 `**kwargs`，把 `group_0/group_1/...` 槽位收进字典再合并，解决 ComfyUI 0.31 autogrow 传参不兼容。
 
