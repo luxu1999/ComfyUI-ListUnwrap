@@ -5,19 +5,19 @@
 
 ---
 
-## 0. 环境要求
+## 1. 环境要求
 
 - Windows / Linux 均可；ComfyUI ≥ 0.30（推荐 0.31.x），能加载官方 MiniMax H3 节点
 - Python 3.10+
 - 参考显卡：RTX 4080 16G（16G 显存是这套分段方案的动机：1080p 直出 10 秒+会 OOM）
 - 网络：GitHub + HuggingFace（国内可用 `gh-proxy.com` 镜像和 `hf-mirror.com`）
 
-## 1. 安装插件（按顺序）
+## 2. 安装插件（按顺序）
 
 在 `ComfyUI/custom_nodes/` 下安装：
 
 ```bash
-# 1) 导演台（必须，且必须打第 2 节的补丁）
+# 1) 导演台（必须，且必须打第 3 节的补丁）
 git clone https://github.com/AIMixer/ComfyUI_MiniMaxH3_Director.git
 # 国内镜像：git clone https://gh-proxy.com/https://github.com/AIMixer/ComfyUI_MiniMaxH3_Director.git
 
@@ -30,17 +30,17 @@ git clone https://github.com/yolain/ComfyUI-Easy-Use.git
 git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git
 ```
 
-安装导演台的 Python 依赖：
+安装 Python 依赖：
 
 ```bash
+# 4) 导演台的依赖（scenedetect / opencv / imageio-ffmpeg 等）
 pip install -r ComfyUI_MiniMaxH3_Director/requirements.txt
-```bash
-# 4) SageAttention（KJ 的 Sage 节点需要；必须 1.x，2.x 与 H3 不兼容会崩）
+
+# 5) SageAttention（KJ 的 Sage 节点需要；必须 1.x，2.x 与 H3 不兼容会崩）
 pip install sageattention==1.0.6
 ```
-```
 
-## 2. 给导演台打两个补丁（关键！）
+## 3. 给导演台打两个补丁（关键！）
 
 原版导演台有 2 个问题，不打补丁工作流会报错或衔接失效：
 
@@ -64,7 +64,9 @@ python patches/apply_patches.py D:/path/to/ComfyUI
 
 > 版本说明：补丁在 ComfyUI 0.31.x 上验证。如果你用的是 0.40+ 的新前端，autogrow 可能原生兼容，可先只打补丁 2（连续性）试跑，报 Combine 错误再打补丁 1。
 
-## 3. 模型与 LoRA（放到对应目录）
+## 4. 模型、LoRA 与参考图
+
+### 4.1 模型与 LoRA（放到对应目录）
 
 | 文件 | 目录 |
 |---|---|
@@ -77,21 +79,32 @@ python patches/apply_patches.py D:/path/to/ComfyUI
 
 国内下载：把 HuggingFace 链接换成 `https://hf-mirror.com/...`。
 
-输入参考图放到 `ComfyUI/input/`：
-- 场景图（工作流默认名 `桌面.jpg`）
-- 角色图（默认 `陈千语_mid20.png`，角色占画面约 20% 高度，可自己按此比例生成）
+### 4.2 参考图
 
-## 4. 放入工作流
+输入参考图放到 `ComfyUI/input/`：
+
+- 场景图（工作流默认名 `桌面.jpg`，换成你自己的场景图后记得改提示词）
+- 角色图（默认 `陈千语_mid20.png`，角色占画面约 20% 高度）
+
+用本仓库脚本把任意角色图处理成约 20% 高度、白底 1920×1088 的参考图（避免模型把角色画大）：
+
+```bash
+python scripts/prepare_char_ref.py 你的角色图.png 陈千语_mid20.png 0.20
+# 输出文件放到 ComfyUI/input/
+```
+
+## 5. 放入工作流
 
 - `workflows/minimax_h3_3seg_15s_1080p_audio.json`（API 版）
 - `workflows/minimax_h3_3seg_15s_1080p_audio.png`（带内嵌工作流，直接拖进 ComfyUI）
 
 打开后检查：
+
 - 节点 `ListToAudio`、`ConcatImageBatches` 已注册（来自本仓库）
 - 三个 `MiniMaxH3Director` 节点已加载（补丁后）
 - 提示词按 `docs/通用提示词填写方法.md` 填写或替换
 
-## 5. 启动参数（重要）
+## 6. 启动参数（重要）
 
 启动 ComfyUI 时：
 
@@ -104,7 +117,7 @@ $env:PYTORCH_CUDA_ALLOC_CONF = "expandable_segments:True"
 python main.py --preview-method auto --disable-cuda-malloc
 ```
 
-## 6. 运行与耗时
+## 7. 运行与耗时
 
 一次 Queue 全自动完成：三段生成 → 自动取第 123 帧 → 拼接 372 帧 → 保存视频 + 工作流 PNG。
 
@@ -114,7 +127,7 @@ python main.py --preview-method auto --disable-cuda-malloc
 | 720p | 1280×736 | 124 | 4 | ≈ 8–10 分钟 |
 | 1080p | 1920×1088 | 124 | 第一段 8、后两段 4 | ≈ 31–33 分钟 |
 
-## 7. 常见问题
+## 8. 常见问题
 
 | 现象 | 原因 / 处理 |
 |---|---|
@@ -122,9 +135,9 @@ python main.py --preview-method auto --disable-cuda-malloc
 | 段间硬切 / 角色消失 1 秒 | 补丁 2 未生效（连续性未开启） |
 | 找不到 `ListToAudio` / `ConcatImageBatches` | 本仓库没装或没重启 ComfyUI |
 | 1080p 直出爆显存 | 这是本方案要绕开的问题，用分段方案即可 |
-| 画面出现多余玩偶/道具 | 提示词里用「桌面物品白名单」约束（见提示词指南） |
+| 画面出现多余玩偶/道具 | 提示词里用「画面物品白名单」约束（见提示词指南，可选） |
 
-## 8. 补丁内容速览（人类可读）
+## 9. 补丁内容速览（人类可读）
 
 **补丁 1**：`nodes/director_groups.py` 的 `MiniMaxH3DirectorGroupsCombine.execute` 改为兼容 `**kwargs`，把 `group_0/group_1/...` 槽位收进字典再合并，解决 ComfyUI 0.31 autogrow 传参不兼容。
 
