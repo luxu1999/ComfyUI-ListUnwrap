@@ -1,0 +1,425 @@
+{
+    "1":  {
+              "class_type":  "UNETLoader",
+              "inputs":  {
+                             "unet_name":  "minimax_h3_ref2va_pruned_int8_convrot.safetensors",
+                             "weight_dtype":  "default"
+                         }
+          },
+    "2":  {
+              "class_type":  "CLIPLoader",
+              "inputs":  {
+                             "clip_name":  "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+                             "type":  "minimax"
+                         }
+          },
+    "3":  {
+              "class_type":  "VAELoader",
+              "inputs":  {
+                             "vae_name":  "minimax_h3_video_vae_fp16.safetensors"
+                         }
+          },
+    "4":  {
+              "class_type":  "VAELoader",
+              "inputs":  {
+                             "vae_name":  "minimax_h3_audio_vae_fp32.safetensors"
+                         }
+          },
+    "5":  {
+              "class_type":  "LoraLoaderModelOnly",
+              "inputs":  {
+                             "model":  [
+                                           "1",
+                                           0
+                                       ],
+                             "lora_name":  "minimax_h3_fl2v_lightx2v_turbo_4step_v0.1_comfy_resized_avg_rank_21_bf16.safetensors",
+                             "strength_model":  0.75
+                         }
+          },
+    "6":  {
+              "class_type":  "PathchSageAttentionKJ",
+              "inputs":  {
+                             "model":  [
+                                           "5",
+                                           0
+                                       ],
+                             "sage_attention":  "auto",
+                             "allow_compile":  false
+                         }
+          },
+    "7":  {
+              "class_type":  "LoadImage",
+              "inputs":  {
+                             "image":  "桌面.jpg"
+                         }
+          },
+    "8":  {
+              "class_type":  "LoadImage",
+              "inputs":  {
+                             "image":  "陈千语_mid20.png"
+                         }
+          },
+    "9":  {
+              "class_type":  "MiniMaxH3DirectorGroupReferenceToVideo",
+              "inputs":  {
+                             "prompt":  "固定机位远景全景：镜头完全静止，整个桌面始终完整入镜，禁止推近、聚焦、特写、变焦。桌面物品白名单：桌面上只允许出现显示器、键盘、鼠标、笔记本电脑、白色主机、粉色小篮子、巧克力棒饼干盒和角色本人；禁止出现任何其他物品，尤其禁止任何玩偶、小熊、泰迪熊、毛绒玩具、人偶、吉祥物、装饰品。角色以小小身影首先出现在显示器屏幕内部：先从屏幕左侧边缘探出半个脑袋，左右张望两下，确认环境后小心翼翼迈出一步，在屏幕上走了两三步，动作轻盈可爱、带着试探感；走到屏幕中间后停下，回头看了一眼，然后慢慢从屏幕里钻出来——先是探出脑袋和上半身，再伸出一条腿跨出屏幕，身体半探在屏幕边缘，最后轻轻跳落到真实桌面上，落地后站定、拍了拍身上、抖了抖小剑，显得精神十足。全程保持与饼干盒等高的小体型，绝对不能放大，明显小于显示器；角色形象必须与\u003cPicture 2\u003e一致，不得变成壁纸女孩；白色小剑始终握在手中，剑不离手。音效：角色在屏幕上的轻盈脚步声、从屏幕钻出时的轻微摩擦声、落地轻响、抖动白色小剑的金属声；不要背景音乐。角色不说话，没有任何台词，无人声对白，只有动作音效。",
+                             "duration_sec":  5.0,
+                             "ref_images.ref_image_0":  [
+                                                            "7",
+                                                            0
+                                                        ],
+                             "ref_images.ref_image_1":  [
+                                                            "8",
+                                                            0
+                                                        ]
+                         }
+          },
+    "10":  {
+               "class_type":  "MiniMaxH3DirectorGroupsCombine",
+               "inputs":  {
+                              "groups.group_0":  [
+                                                     "9",
+                                                     0
+                                                 ]
+                          }
+           },
+    "11":  {
+               "class_type":  "MiniMaxH3Director",
+               "inputs":  {
+                              "model":  [
+                                            "6",
+                                            0
+                                        ],
+                              "video_vae":  [
+                                                "3",
+                                                0
+                                            ],
+                              "audio_vae":  [
+                                                "4",
+                                                0
+                                            ],
+                              "clip":  [
+                                           "2",
+                                           0
+                                       ],
+                              "task_type":  "r2v — 参考主体生视频(Reference to Video)",
+                              "global_prompt":  "固定机位远景全景：镜头从第一帧到最后一帧完全静止，整个桌面（显示器、键盘、巧克力棒饼干盒）完整充满画面，背景物体位置全程不变，禁止推近、禁止聚焦、禁止特写、禁止变焦、禁止镜头跟随角色。桌面物品白名单：桌面上只允许出现显示器、键盘、鼠标、笔记本电脑、白色主机、粉色小篮子、巧克力棒饼干盒和角色本人；禁止出现任何其他物品，尤其禁止任何玩偶、小熊、泰迪熊、毛绒玩具、人偶、吉祥物、装饰品。场景完全复用\u003cPicture 1\u003e的灯光与布局，\u003cPicture 1\u003e中电脑屏幕上的壁纸女孩只是背景装饰，禁止作为角色形象。角色必须是\u003cPicture 2\u003e中的Q版卡通陈千语，发型、服饰、五官完全以\u003cPicture 2\u003e为准；角色身高与巧克力棒饼干盒完全等高（约10厘米），始终很小、远离镜头，在画面中占比很小，明显小于显示器、键盘和鼠标；白色小剑始终握在手中、剑不离手，比例迷你。背景保持照片写实质感，Q版角色与写实实景自然融合，动作细腻连贯，无穿模，细节清晰，画面稳定，无镜头晃动。音频要求：全片只保留动作与碰撞音效，不要任何背景音乐（无BGM）、不要音乐、不要环境音乐。角色不说话，没有任何台词，无人声对白。",
+                              "bd_grp_sample":  "采样设置",
+                              "cfg":  1.0,
+                              "seed":  61867561863264,
+                              "frame_rate":  24.0,
+                              "width":  1920,
+                              "height":  1088,
+                              "ref_max_size":  1920,
+                              "total_frames":  124,
+                              "timeline_data":  "{\"version\":4,\"editMode\":\"global\",\"timelineMode\":\"prompt_batch\",\"totalFrames\":124,\"frameRate\":24,\"width\":1920,\"height\":1088,\"refMaxSize\":1920,\"output\":{\"mode\":\"fixed\",\"longEdge\":1920,\"width\":1920,\"height\":1088,\"maxExportFrames\":0,\"exportMode\":\"all\",\"continuityEnabled\":false,\"continuityOverlapFrames\":9},\"videoClips\":[],\"video\":{\"fileName\":\"\",\"videoFile\":\"\",\"subfolder\":\"\",\"type\":\"input\",\"frames\":[],\"frameMap\":[]},\"global\":{\"taskType\":\"r2v — 参考主体生视频(Reference to Video)\",\"prompt\":\"固定机位远景全景：镜头从第一帧到最后一帧完全静止，整个桌面（显示器、键盘、巧克力棒饼干盒）完整充满画面，背景物体位置全程不变，禁止推近、禁止聚焦、禁止特写、禁止变焦、禁止镜头跟随角色。桌面物品白名单：桌面上只允许出现显示器、键盘、鼠标、笔记本电脑、白色主机、粉色小篮子、巧克力棒饼干盒和角色本人；禁止出现任何其他物品，尤其禁止任何玩偶、小熊、泰迪熊、毛绒玩具、人偶、吉祥物、装饰品。场景完全复用\\u003cPicture 1\\u003e的灯光与布局，\\u003cPicture 1\\u003e中电脑屏幕上的壁纸女孩只是背景装饰，禁止作为角色形象。角色必须是\\u003cPicture 2\\u003e中的Q版卡通陈千语，发型、服饰、五官完全以\\u003cPicture 2\\u003e为准；角色身高与巧克力棒饼干盒完全等高（约10厘米），始终很小、远离镜头，在画面中占比很小，明显小于显示器、键盘和鼠标；白色小剑始终握在手中、剑不离手，比例迷你。背景保持照片写实质感，Q版角色与写实实景自然融合，动作细腻连贯，无穿模，细节清晰，画面稳定，无镜头晃动。音频要求：全片只保留动作与碰撞音效，不要任何背景音乐（无BGM）、不要音乐、不要环境音乐。角色不说话，没有任何台词，无人声对白。\",\"refs\":[],\"referenceVideo\":{},\"continuousReference\":false,\"genImage\":{\"imageFile\":\"\"}},\"segments\":[{\"id\":\"s0\",\"start\":0,\"length\":124,\"frameCount\":124,\"durationSec\":5.167,\"prompt\":\"\",\"taskType\":\"\",\"refs\":[],\"referenceVideo\":{},\"genImage\":{\"imageFile\":\"\"},\"negativePrompt\":\"\"}],\"gen\":{\"defaultFrameCount\":124},\"runSelectEnabled\":false,\"runSelection\":[]}",
+                              "bd_grp_advanced":  "高级采样 Advanced",
+                              "steps":  8,
+                              "sampler":  "er_sde",
+                              "scheduler":  "simple",
+                              "shift_video":  12.0,
+                              "shift_audio":  3.0,
+                              "bd_grp_perf":  "性能 Performance",
+                              "clear_vram_between_segments":  true,
+                              "export_source_images":  false,
+                              "r2v_groups":  [
+                                                 "10",
+                                                 0
+                                             ]
+                          }
+           },
+    "12":  {
+               "class_type":  "easy imageListToImageBatch",
+               "inputs":  {
+                              "images":  [
+                                             "11",
+                                             0
+                                         ]
+                          }
+           },
+    "13":  {
+               "class_type":  "ImageFromBatch",
+               "inputs":  {
+                              "image":  [
+                                            "12",
+                                            0
+                                        ],
+                              "batch_index":  123,
+                              "length":  1
+                          }
+           },
+    "14":  {
+               "class_type":  "UNETLoader",
+               "inputs":  {
+                              "unet_name":  "minimax_h3_fl2va_pruned_int8_convrot.safetensors",
+                              "weight_dtype":  "default"
+                          }
+           },
+    "15":  {
+               "class_type":  "LoraLoaderModelOnly",
+               "inputs":  {
+                              "model":  [
+                                            "14",
+                                            0
+                                        ],
+                              "lora_name":  "minimax_h3_fl2v_lightx2v_turbo_4step_v0.1_comfy_resized_avg_rank_21_bf16.safetensors",
+                              "strength_model":  0.75
+                          }
+           },
+    "16":  {
+               "class_type":  "PathchSageAttentionKJ",
+               "inputs":  {
+                              "model":  [
+                                            "15",
+                                            0
+                                        ],
+                              "sage_attention":  "auto",
+                              "allow_compile":  false
+                          }
+           },
+    "17":  {
+               "class_type":  "MiniMaxH3DirectorGroupImageToVideo",
+               "inputs":  {
+                              "prompt":  "视频第一帧必须与给定首帧画面完全一致，角色必须始终在场、不能消失。固定机位，镜头完全保持不动：不推近、不拉近、不聚焦、不变焦、不移动，全景构图完整展示整个桌面，视角始终与首帧一致，只靠角色动作推进。画面中禁止出现任何玩偶、小熊、毛绒玩具。中间过程：角色把画面左侧的巧克力棒饼干盒当作大BOSS，双手握紧白色小剑、压低重心、目光锁定饼干盒，摆出战斗姿态；她绕着小步观察饼干盒，随后深吸一口气，蓄力冲刺，冲到盒前纵身一跃、挥剑横斩并一脚踹翻饼干盒，饼干盒被击败、翻倒在地，里面的巧克力棒和零食哗啦啦散落桌面，几根滚到键盘旁；角色帅气落地，站定后轻轻呼了口气，甩了甩小剑，露出神气的表情。全程保持与饼干盒等高的小体型（约10厘米），不能变大；白色小剑始终握在手中、剑不离手。音效：快速奔跑的脚步声、冲刺声、挥剑破空声、踹翻饼干盒的碰撞声、零食哗啦散落声、不出声的得意表情（画面表现，无声音）；不要背景音乐。角色不说话，没有任何台词，无人声对白，只有动作音效。",
+                              "duration_sec":  5.0,
+                              "first_frame":  [
+                                                  "13",
+                                                  0
+                                              ]
+                          }
+           },
+    "18":  {
+               "class_type":  "MiniMaxH3Director",
+               "inputs":  {
+                              "model":  [
+                                            "16",
+                                            0
+                                        ],
+                              "video_vae":  [
+                                                "3",
+                                                0
+                                            ],
+                              "audio_vae":  [
+                                                "4",
+                                                0
+                                            ],
+                              "clip":  [
+                                           "2",
+                                           0
+                                       ],
+                              "task_type":  "i2v — 图生视频(Image to Video)",
+                              "global_prompt":  "写实真实室内电脑桌面场景，完全复用首帧画面的场景、灯光与构图。固定机位，镜头无推拉、无变焦、无移动，全景构图完整展示整个桌面，全程保持首帧视角。画面中禁止出现任何玩偶、小熊、毛绒玩具、额外的人偶或吉祥物。角色是Q版卡通陈千语，体型微小（与巧克力棒饼干盒等高，约10厘米），明显小于显示器、键盘和鼠标，角色必须全程在场，白色小剑始终握在手中、剑不离手。背景保持照片写实质感，Q版角色与写实实景自然融合，动作细腻连贯，无穿模，细节清晰，画面稳定。音频要求：全片只保留动作与碰撞音效，不要任何背景音乐（无BGM）、不要音乐、不要环境音乐。角色不说话，没有任何台词，无人声对白。",
+                              "bd_grp_sample":  "采样设置",
+                              "cfg":  1.0,
+                              "seed":  61867561863264,
+                              "frame_rate":  24.0,
+                              "width":  1920,
+                              "height":  1088,
+                              "ref_max_size":  1920,
+                              "total_frames":  124,
+                              "timeline_data":  "{\"version\":4,\"editMode\":\"global\",\"timelineMode\":\"prompt_batch\",\"totalFrames\":124,\"frameRate\":24,\"width\":1920,\"height\":1088,\"refMaxSize\":1920,\"output\":{\"mode\":\"fixed\",\"longEdge\":1920,\"width\":1920,\"height\":1088,\"maxExportFrames\":0,\"exportMode\":\"all\",\"continuityEnabled\":false,\"continuityOverlapFrames\":9},\"videoClips\":[],\"video\":{\"fileName\":\"\",\"videoFile\":\"\",\"subfolder\":\"\",\"type\":\"input\",\"frames\":[],\"frameMap\":[]},\"global\":{\"taskType\":\"i2v — 图生视频(Image to Video)\",\"prompt\":\"写实真实室内电脑桌面场景，完全复用首帧画面的场景、灯光与构图。固定机位，镜头无推拉、无变焦、无移动，全景构图完整展示整个桌面，全程保持首帧视角。画面中禁止出现任何玩偶、小熊、毛绒玩具、额外的人偶或吉祥物。角色是Q版卡通陈千语，体型微小（与巧克力棒饼干盒等高，约10厘米），明显小于显示器、键盘和鼠标，角色必须全程在场，白色小剑始终握在手中、剑不离手。背景保持照片写实质感，Q版角色与写实实景自然融合，动作细腻连贯，无穿模，细节清晰，画面稳定。音频要求：全片只保留动作与碰撞音效，不要任何背景音乐（无BGM）、不要音乐、不要环境音乐。角色不说话，没有任何台词，无人声对白。\",\"refs\":[],\"referenceVideo\":{},\"continuousReference\":false,\"genImage\":{\"imageFile\":\"\"}},\"segments\":[{\"id\":\"s0\",\"start\":0,\"length\":124,\"frameCount\":124,\"durationSec\":5.167,\"prompt\":\"\",\"taskType\":\"\",\"refs\":[],\"referenceVideo\":{},\"genImage\":{\"imageFile\":\"\"},\"negativePrompt\":\"\"}],\"gen\":{\"defaultFrameCount\":124},\"runSelectEnabled\":false,\"runSelection\":[]}",
+                              "bd_grp_advanced":  "高级采样 Advanced",
+                              "steps":  4,
+                              "sampler":  "er_sde",
+                              "scheduler":  "simple",
+                              "shift_video":  12.0,
+                              "shift_audio":  3.0,
+                              "bd_grp_perf":  "性能 Performance",
+                              "clear_vram_between_segments":  true,
+                              "export_source_images":  false,
+                              "i2v_groups":  [
+                                                 "17",
+                                                 0
+                                             ]
+                          }
+           },
+    "19":  {
+               "class_type":  "easy imageListToImageBatch",
+               "inputs":  {
+                              "images":  [
+                                             "18",
+                                             0
+                                         ]
+                          }
+           },
+    "20":  {
+               "class_type":  "ImageFromBatch",
+               "inputs":  {
+                              "image":  [
+                                            "19",
+                                            0
+                                        ],
+                              "batch_index":  123,
+                              "length":  1
+                          }
+           },
+    "21":  {
+               "class_type":  "MiniMaxH3DirectorGroupImageToVideo",
+               "inputs":  {
+                              "prompt":  "视频第一帧必须与给定首帧画面完全一致，角色必须始终在场、不能消失。固定机位，镜头完全保持不动：不推近、不拉近、不聚焦、不变焦、不移动，全景构图完整展示整个桌面，视角始终与首帧一致，只靠角色动作推进。画面中禁止出现任何玩偶、小熊、毛绒玩具。中间过程：角色击败饼干盒BOSS后，转过身面向镜头外的观众，得意地炫耀邀功：先双手叉腰、挺起胸膛、仰起头，神气地哼了一声；然后拍拍胸脯，举起白色小剑朝镜头挥了挥，像是在说看我的厉害；接着带点傲娇地扭过头去、又偷偷转回来看镜头一眼；最后摆出傲娇又得意的定格姿势收尾——一手叉腰、一手举剑、微微侧头，神气十足。全程保持与饼干盒等高的小体型（约10厘米），不能变大；白色小剑始终握在手中、剑不离手。音效：键盘按键的咔哒声、在键盘上打滚的摩擦声、不出声的得意表情（画面表现，无声音）、挥剑声；不要背景音乐。角色不说话，没有任何台词，无人声对白，只有动作音效。",
+                              "duration_sec":  5.0,
+                              "first_frame":  [
+                                                  "20",
+                                                  0
+                                              ]
+                          }
+           },
+    "22":  {
+               "class_type":  "MiniMaxH3Director",
+               "inputs":  {
+                              "model":  [
+                                            "16",
+                                            0
+                                        ],
+                              "video_vae":  [
+                                                "3",
+                                                0
+                                            ],
+                              "audio_vae":  [
+                                                "4",
+                                                0
+                                            ],
+                              "clip":  [
+                                           "2",
+                                           0
+                                       ],
+                              "task_type":  "i2v — 图生视频(Image to Video)",
+                              "global_prompt":  "写实真实室内电脑桌面场景，完全复用首帧画面的场景、灯光与构图。固定机位，镜头无推拉、无变焦、无移动，全景构图完整展示整个桌面，全程保持首帧视角。画面中禁止出现任何玩偶、小熊、毛绒玩具、额外的人偶或吉祥物。角色是Q版卡通陈千语，体型微小（与巧克力棒饼干盒等高，约10厘米），明显小于显示器、键盘和鼠标，角色必须全程在场，白色小剑始终握在手中、剑不离手。背景保持照片写实质感，Q版角色与写实实景自然融合，动作细腻连贯，无穿模，细节清晰，画面稳定。音频要求：全片只保留动作与碰撞音效，不要任何背景音乐（无BGM）、不要音乐、不要环境音乐。角色不说话，没有任何台词，无人声对白。",
+                              "bd_grp_sample":  "采样设置",
+                              "cfg":  1.0,
+                              "seed":  61867561863264,
+                              "frame_rate":  24.0,
+                              "width":  1920,
+                              "height":  1088,
+                              "ref_max_size":  1920,
+                              "total_frames":  124,
+                              "timeline_data":  "{\"version\":4,\"editMode\":\"global\",\"timelineMode\":\"prompt_batch\",\"totalFrames\":124,\"frameRate\":24,\"width\":1920,\"height\":1088,\"refMaxSize\":1920,\"output\":{\"mode\":\"fixed\",\"longEdge\":1920,\"width\":1920,\"height\":1088,\"maxExportFrames\":0,\"exportMode\":\"all\",\"continuityEnabled\":false,\"continuityOverlapFrames\":9},\"videoClips\":[],\"video\":{\"fileName\":\"\",\"videoFile\":\"\",\"subfolder\":\"\",\"type\":\"input\",\"frames\":[],\"frameMap\":[]},\"global\":{\"taskType\":\"i2v — 图生视频(Image to Video)\",\"prompt\":\"写实真实室内电脑桌面场景，完全复用首帧画面的场景、灯光与构图。固定机位，镜头无推拉、无变焦、无移动，全景构图完整展示整个桌面，全程保持首帧视角。画面中禁止出现任何玩偶、小熊、毛绒玩具、额外的人偶或吉祥物。角色是Q版卡通陈千语，体型微小（与巧克力棒饼干盒等高，约10厘米），明显小于显示器、键盘和鼠标，角色必须全程在场，白色小剑始终握在手中、剑不离手。背景保持照片写实质感，Q版角色与写实实景自然融合，动作细腻连贯，无穿模，细节清晰，画面稳定。音频要求：全片只保留动作与碰撞音效，不要任何背景音乐（无BGM）、不要音乐、不要环境音乐。角色不说话，没有任何台词，无人声对白。\",\"refs\":[],\"referenceVideo\":{},\"continuousReference\":false,\"genImage\":{\"imageFile\":\"\"}},\"segments\":[{\"id\":\"s0\",\"start\":0,\"length\":124,\"frameCount\":124,\"durationSec\":5.167,\"prompt\":\"\",\"taskType\":\"\",\"refs\":[],\"referenceVideo\":{},\"genImage\":{\"imageFile\":\"\"},\"negativePrompt\":\"\"}],\"gen\":{\"defaultFrameCount\":124},\"runSelectEnabled\":false,\"runSelection\":[]}",
+                              "bd_grp_advanced":  "高级采样 Advanced",
+                              "steps":  4,
+                              "sampler":  "er_sde",
+                              "scheduler":  "simple",
+                              "shift_video":  12.0,
+                              "shift_audio":  3.0,
+                              "bd_grp_perf":  "性能 Performance",
+                              "clear_vram_between_segments":  true,
+                              "export_source_images":  false,
+                              "i2v_groups":  [
+                                                 "21",
+                                                 0
+                                             ]
+                          }
+           },
+    "23":  {
+               "class_type":  "easy imageListToImageBatch",
+               "inputs":  {
+                              "images":  [
+                                             "22",
+                                             0
+                                         ]
+                          }
+           },
+    "24":  {
+               "class_type":  "ConcatImageBatches",
+               "inputs":  {
+                              "images_A":  [
+                                               "12",
+                                               0
+                                           ],
+                              "images_B":  [
+                                               "19",
+                                               0
+                                           ]
+                          }
+           },
+    "25":  {
+               "class_type":  "ConcatImageBatches",
+               "inputs":  {
+                              "images_A":  [
+                                               "24",
+                                               0
+                                           ],
+                              "images_B":  [
+                                               "23",
+                                               0
+                                           ]
+                          }
+           },
+    "26":  {
+               "class_type":  "VHS_VideoCombine",
+               "inputs":  {
+                              "images":  [
+                                             "25",
+                                             0
+                                         ],
+                              "frame_rate":  24.0,
+                              "loop_count":  0,
+                              "filename_prefix":  "MiniMaxH3/minimax_h3_3seg_15s_1080p_audio_v2",
+                              "format":  "video/h264-mp4",
+                              "pix_fmt":  "yuv420p",
+                              "crf":  19,
+                              "save_metadata":  true,
+                              "save_output":  true,
+                              "pingpong":  false,
+                              "trim_to_audio":  false,
+                              "audio":  [
+                                            "31",
+                                            0
+                                        ]
+                          }
+           },
+    "27":  {
+               "class_type":  "ListToAudio",
+               "inputs":  {
+                              "audios":  [
+                                             "11",
+                                             1
+                                         ]
+                          }
+           },
+    "28":  {
+               "class_type":  "ListToAudio",
+               "inputs":  {
+                              "audios":  [
+                                             "18",
+                                             1
+                                         ]
+                          }
+           },
+    "29":  {
+               "class_type":  "ListToAudio",
+               "inputs":  {
+                              "audios":  [
+                                             "22",
+                                             1
+                                         ]
+                          }
+           },
+    "30":  {
+               "class_type":  "AudioConcat",
+               "inputs":  {
+                              "audio1":  [
+                                             "27",
+                                             0
+                                         ],
+                              "audio2":  [
+                                             "28",
+                                             0
+                                         ],
+                              "direction":  "after"
+                          }
+           },
+    "31":  {
+               "class_type":  "AudioConcat",
+               "inputs":  {
+                              "audio1":  [
+                                             "30",
+                                             0
+                                         ],
+                              "audio2":  [
+                                             "29",
+                                             0
+                                         ],
+                              "direction":  "after"
+                          }
+           }
+}
