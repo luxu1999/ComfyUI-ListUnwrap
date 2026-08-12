@@ -41,6 +41,42 @@ Director.audio  → ListToAudio → VHS_VideoCombine.audio
 
 更完整的「3 段拼接 + 首帧锁定 + 固定机位 + 动作音效」工作流，见仓库配套说明与提示词指南。
 
+
+> 注意：下面的三段拼接工作流还依赖打了补丁的 `ComfyUI_MiniMaxH3_Director`，补丁见下文。
+
+## 配套工作流（3 × 5 秒 → 15 秒）
+
+`workflows/` 目录提供一条可直接跑的 MiniMax H3 三段拼接工作流（1080p，含动作音效、无台词）：
+
+- `workflows/minimax_h3_3seg_15s_1080p_audio.json`
+- `workflows/minimax_h3_3seg_15s_1080p_audio.png`（带内嵌工作流，直接拖进 ComfyUI）
+
+原理：16G 显存无法 1080p 直出 10 秒以上，所以拆成 3 × 5 秒分段生成，自动取上一段第 123 帧作为下一段首帧（硬锁定、衔接无缝），最后拼接成 372 帧输出。
+
+## 导演台补丁（必需）
+
+工作流依赖 [ComfyUI_MiniMaxH3_Director](https://github.com/AIMixer/ComfyUI_MiniMaxH3_Director)，原版有两个问题需要打补丁：
+
+1. Combine 节点 autogrow 传参不兼容（报 `connect at least one group`）
+2. 外部组路径未启用段间连续性（衔接硬切/角色消失）
+
+自动打补丁：
+
+```bash
+python patches/apply_patches.py          # 自动定位 custom_nodes/ComfyUI_MiniMaxH3_Director
+# 或 python patches/apply_patches.py D:/path/to/ComfyUI
+```
+
+也可用 `patches/01_*.patch`、`patches/02_*.patch` 手动 `git apply`。打完重启 ComfyUI。
+
+## 给 AI Agent 的搭建文档
+
+想用 Codex / OpenClaw 等 Agent 自动复现整套流程？直接把 [docs/AGENT_SETUP_CN.md](docs/AGENT_SETUP_CN.md) 交给 Agent，它会照着下载插件、打补丁、放模型、装工作流并运行。
+
+提示词填写方法见：
+
+- [docs/通用提示词填写方法.md](docs/通用提示词填写方法.md)
+- [docs/总提示词拆分与一致性指南.md](docs/总提示词拆分与一致性指南.md)
 ## 兼容性
 
 - ComfyUI ≥ 0.30（含新 comfy_api 节点框架）
