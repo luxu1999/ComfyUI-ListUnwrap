@@ -1,86 +1,128 @@
 # ComfyUI-ListUnwrap
 
-ComfyUI 小工具节点包：解决「列表输出 → 单值输入」和「多段图像批次拼接」的问题，专为 MiniMax H3 多段视频拼接工作流设计。
+ComfyUI 小工具节点包 + **MiniMax H3 链式导演台（Chain Director）**：一个节点自动完成「按总时长分段 → 首段 r2v → 后续段 i2v 首帧锁定接力 → 画面/音频拼接」，专为在 16G 显存上生成 MiniMax H3 长视频设计。
 
-## 节点
+## 节点一览
 
-| 节点 | 输入 | 输出 | 作用 |
-|---|---|---|---|
-| `ListToAudio` | `audios`（AUDIO 列表） | AUDIO | 取出列表中的音频，接给只认单个音频的保存节点（如 `VHS_VideoCombine`） |
-| `ConcatImageBatches` | `images_A` / `images_B`（IMAGE） | IMAGE | 把两段图像批次按时间轴拼接（`torch.cat`，dim=0），用于多段视频合成 |
+| 节点 | 说明 |
+|---|---|
+| `ListToAudio` | 把 AUDIO 列表解包成单个 AUDIO，接给只认单音频的保存节点（如 `VHS_VideoCombine`） |
+| `ConcatImageBatches` | 把两段 IMAGE 批次按时间轴拼接（`torch.cat`，dim=0） |
+| `MiniMax H3 Chain Director｜链式导演台（多段拼接）` | **中文版**链式导演台，参数/提示全部中文 |
+| `MiniMax H3 Chain Director` | **纯英文版**链式导演台，参数/提示/报错全部英文（与中文版逻辑一致） |
 
-## 为什么需要
+## 链式导演台：作用与原理
 
-ComfyUI 中部分节点（如 `ComfyUI_MiniMaxH3_Director` 的导演台节点）会把 `images` / `audio` 以**列表**形式输出（`OUTPUT_IS_LIST = True`），而 `VHS_VideoCombine` 等保存节点只接受单个 `IMAGE` / `AUDIO`，直接连线会报错。
+MiniMax H3 单段直出有帧数上限（约 362 帧 ≈ 15 秒），且 16G 显存 1080p 直出 10 秒以上会爆显存。链式导演台把长视频**自动拆成 N 段**：
 
-这两个节点负责转换与拼接：
+1. **第 1 段**：r2v（参考图生视频）——`image_0`（场景/主体图）+ `image_1..8`（最多 9 张参考图，对应 `<Picture 1..9>`）；
+2. **第 2~N 段**：i2v（图生视频）——以上一段**最后一帧硬锁定**为第一帧，保证角色/场景连续不漂移；
+3. 全部段生成后，节点自动把画面帧 `torch.cat` 拼接、音频拼接，输出 `IMAGE + AUDIO + fps + frame_count`，直接接 `VHS_VideoCombine` 保存成 mp4。
 
-- `Director.audio`（列表） → `ListToAudio` → 单个 AUDIO → `VHS_VideoCombine.audio`
-- 多段生成后，每段的 IMAGE 批次 → `ConcatImageBatches` → 拼成整段视频
+用户只需要填：总时长 + 每段秒数 + 分辨率 + 提示词，剩下的分段、接力、拼接全自动。
 
-配合 [ComfyUI_MiniMaxH3_Director](https://github.com/AIMixer/ComfyUI_MiniMaxH3_Director) 可实现「3 × 5 秒 → 15 秒」的分段拼接工作流——16G 显存也能跑 1080p 长视频。
+## 参数说明（中英对照）
 
-## 安装
+### 连接口（提示词上方，两种版本同名）
+
+| 参数 | 类型 | 作用 |
+|---|---|---|
+| `model_r2v` | MODEL | ref2va 底座，用于第 1 段 r2v 生成 |
+| `model_i2v` | MODEL | fl2va 底座，用于第 2 段及以后的 i2v 接力 |
+| `video_vae` / `audio_vae` | VAE | 视频 VAE / 音频 VAE |
+| `clip` | CLIP | 文本编码器（qwen3vl_32b_minimax_h3） |
+| `image_0` ~ `image_8` | IMAGE | 9 个参考图口：`image_0` → `<Picture 1>`，`image_1` → `<Picture 2>`，依此类推；只用得上的接上即可，其余留空 |
+
+### 提示词（中间区域）
+
+| 中文版 | 英文版 | 作用 |
+|---|---|---|
+| 全局提示词 | `global_prompt` | 全片不变的设定：场景/风格/角色/机位等。可用 `<Picture N>` 引用参考图 |
+| 时间轴提示词（必填） | `timeline_prompt` | 每行一段：`0-5s: 动作描述`。节点按时间段自动映射到各段；留空会红字报错 |
+
+### 参数（提示词下方）
+
+| 中文版 | 英文版 | 作用 / 效果 |
+|---|---|---|
+| 总时长预设 | `duration_preset` | 15/30/45/60/90/120 秒快捷选择；非预设时长（如 5/8/33 秒）选「自定义」 |
+| 自定义总时长（秒） | `custom_seconds` | 仅当总时长选「自定义」时生效；5~600 秒 |
+| 分段方式 | `split_preset` | 每段 5/10/15 秒三类预设；特殊需求才选「自定义」 |
+| 自定义每段秒数 | `custom_segment_seconds` | 仅当分段选「自定义」时生效；单段上限约 15 秒（362 帧） |
+| 分辨率预设（百万像素） | `resolution_preset` | `0.4MP (480p)`=864×480、`0.9MP (720p)`=1280×736、`2.0MP (1080p)`=1920×1088 |
+| 参考图最大边（像素） | `ref_max_size` | 参考图缩放的最大边长，一般与分辨率预设一致 |
+| 自动锚点 | `auto_anchor` | 自动追加「首帧锁定/体型/参考图一致」锚点句，推荐开启 |
+| 采样步数 | `steps` | **每一段内部**的扩散采样步数：4 步 = turbo LoRA 推荐值，8 步更精细但耗时约翻倍（6 段 × 4 步 = 6 次独立的 4 步采样） |
+| 采样器 / 调度器 | `sampler` / `scheduler` | 推荐 `er_sde` + `simple` |
+| 引导强度CFG | `cfg` | turbo LoRA 下推荐 1.0 |
+| 随机种子 | `seed` | 固定可复现 |
+| 视频时间偏移 | `shift_video` | 视频时间偏移，推荐 12.0 |
+| 音频时间偏移 | `shift_audio` | 音频时间偏移，推荐 3.0 |
+
+### 注意
+
+- 总时长必须能被每段秒数**整除**，否则节点红字报错（防止静默丢掉几秒）。
+- 每段秒数超过约 15 秒会红字报错。
+- 成片时长因 MiniMax 官方帧网格（17k+5）会有 ±0.5 秒/段的小误差，属正常现象。
+
+## 配套工作流
+
+`workflows/` 提供一条 **480p / 30 秒 / 6 段**（5 秒每段）示例工作流，含 `<Picture N>` 提示词写法：
+
+- `workflows/MiniMax_H3_Chain_Director_480p_30s.png` — 带内嵌工作流，**直接拖进 ComfyUI** 即可
+- `workflows/MiniMax_H3_Chain_Director_480p_30s_api.json` — API 格式，适合 AI Agent / 脚本提交
+
+> 示例参考图文件名：`input/桌面.jpg`、`input/正面.png`、`input/侧面.png`、`input/背面.png`。换成你自己的图片时，改对应 `LoadImage` 的文件名即可；图片数量随意（最多 9 张）。
+
+## 安装与依赖插件
+
+工作流用到的插件（**全部必须安装**）：
+
+1. [ComfyUI_MiniMaxH3_Director](https://github.com/AIMixer/ComfyUI_MiniMaxH3_Director)（导演台，且必须打本仓库 `patches/` 的两个补丁）
+2. **ComfyUI-ListUnwrap**（本仓库，提供链式导演台节点）
+3. [ComfyUI-VideoHelperSuite](https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite)（`VHS_VideoCombine` 保存节点）
 
 ```bash
 cd ComfyUI/custom_nodes
+git clone https://github.com/AIMixer/ComfyUI_MiniMaxH3_Director.git
 git clone https://github.com/luxu1999/ComfyUI-ListUnwrap.git
-# 然后重启 ComfyUI
+git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git
+pip install -r ComfyUI_MiniMaxH3_Director/requirements.txt
 ```
 
-也可以手动安装：把本仓库的 `__init__.py` 放到 `custom_nodes/ComfyUI_ListUnwrap/` 下，重启 ComfyUI。
-
-## 用法示例
-
-```
-Director.images → easy imageListToImageBatch → 第一段批次(124帧)
-Director.audio  → ListToAudio → VHS_VideoCombine.audio
-
-第一段批次 + 第二段批次 → ConcatImageBatches → 248帧 → VHS_VideoCombine.images
-```
-
-更完整的「3 段拼接 + 首帧锁定」工作流（示例风格：固定机位、动作音效，均可按需调整），见仓库配套说明与提示词指南。
-
-
-> 注意：下面的三段拼接工作流还依赖打了补丁的 `ComfyUI_MiniMaxH3_Director`，补丁见下文。
-
-## 配套工作流（3 × 5 秒 → 15 秒）
-
-`workflows/` 目录提供一条可直接跑的 MiniMax H3 三段拼接工作流（1080p，示例含动作音效、无台词，可按需改提示词）：
-
-- `workflows/三段拼合视频生成工作流.png`（带内嵌工作流，**直接拖进 ComfyUI**）
-- `workflows/三段拼合视频生成工作流.json`
-- 等价英文名：`workflows/minimax_h3_3seg_15s_1080p_audio.png` / `.json`
-
-原理：16G 显存无法 1080p 直出 10 秒以上，所以拆成 3 × 5 秒分段生成，自动取上一段第 123 帧作为下一段首帧（硬锁定、衔接无缝），最后拼接成 372 帧输出。
-
-## 导演台补丁（必需）
-
-工作流依赖 [ComfyUI_MiniMaxH3_Director](https://github.com/AIMixer/ComfyUI_MiniMaxH3_Director)，原版有两个问题需要打补丁：
-
-1. Combine 节点 autogrow 传参不兼容（报 `connect at least one group`）
-2. 外部组路径未启用段间连续性（衔接硬切/角色消失）
-
-自动打补丁：
+打补丁（Director 原版两个问题：Combine autogrow 不兼容、段间连续性失效）：
 
 ```bash
-python patches/apply_patches.py          # 自动定位 custom_nodes/ComfyUI_MiniMaxH3_Director
+cd ComfyUI-ListUnwrap
+python patches/apply_patches.py            # 自动定位到 custom_nodes/ComfyUI_MiniMaxH3_Director
 # 或 python patches/apply_patches.py D:/path/to/ComfyUI
 ```
 
-也可用 `patches/01_*.patch`、`patches/02_*.patch` 手动 `git apply`。打完重启 ComfyUI。
+打完补丁**必须重启 ComfyUI**。
+
+### 模型与 LoRA（放到对应目录）
+
+| 文件 | 目录 |
+|---|---|
+| `minimax_h3_ref2va_pruned_int8_convrot.safetensors`（r2v 底座） | `models/diffusion_models/` |
+| `minimax_h3_fl2va_pruned_int8_convrot.safetensors`（i2v 底座） | `models/diffusion_models/` |
+| `qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors`（CLIP） | `models/text_encoders/` |
+| `minimax_h3_video_vae_fp16.safetensors` | `models/vae/` |
+| `minimax_h3_audio_vae_fp32.safetensors` | `models/vae/` |
+| `minimax_h3_fl2v_lightx2v_turbo_4step_v0.1_comfy_resized_avg_rank_21_bf16.safetensors`（turbo LoRA，strength 0.75） | `models/loras/` |
+
+模型来源：[Kijai/MiniMax-H3_comfy](https://huggingface.co/Kijai/MiniMax-H3_comfy)，国内可用 `hf-mirror.com`。
+
+可选加速：SageAttention 1.0.6（KJ 的 Sage 节点）与 TeaCache（阈值 **≤ 0.1**），不在默认工作流内。
 
 ## 给 AI Agent 的搭建文档
 
-想用 Codex / OpenClaw 等 Agent 自动复现整套流程？直接把 [docs/AGENT_SETUP_CN.md](docs/AGENT_SETUP_CN.md) 交给 Agent，它会照着下载插件、打补丁、放模型、装工作流并运行。
+想用 Codex / OpenClaw 等 AI Agent 自动复现整套流程？直接把 [docs/AGENT_SETUP_CN.md](docs/AGENT_SETUP_CN.md) 交给 Agent，它会照着下载插件、打补丁、放模型、载入工作流并运行。
 
-提示词填写方法见：
+提示词写法见 [docs/通用提示词填写方法.md](docs/通用提示词填写方法.md) 与 [docs/总提示词拆分与一致性指南.md](docs/总提示词拆分与一致性指南.md)。
 
-- [docs/通用提示词填写方法.md](docs/通用提示词填写方法.md)
-- [docs/总提示词拆分与一致性指南.md](docs/总提示词拆分与一致性指南.md)
 ## 兼容性
 
-- ComfyUI ≥ 0.30（含新 comfy_api 节点框架）
+- ComfyUI ≥ 0.30（推荐 0.31.x）
 - 依赖：`torch`（ComfyUI 自带）
 
 ## License
