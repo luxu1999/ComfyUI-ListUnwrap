@@ -16,6 +16,8 @@ class ListToAudio:
         return (audios[0],)
 
 
+NODE_CLASS_MAPPINGS = {"ListToAudio": ListToAudio}
+NODE_DISPLAY_NAME_MAPPINGS = {"ListToAudio": "List To Audio"}
 class ConcatImageBatches:
     @classmethod
     def INPUT_TYPES(cls):
@@ -28,20 +30,5 @@ class ConcatImageBatches:
     def concat(self, images_A, images_B):
         return (torch.cat([images_A, images_B], dim=0),)
 
-
-NODE_CLASS_MAPPINGS = {
-    "ListToAudio": ListToAudio,
-    "ConcatImageBatches": ConcatImageBatches,
-}
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "ListToAudio": "List To Audio",
-    "ConcatImageBatches": "Concat Image Batches",
-}
-
-from .chain import MiniMaxH3ChainDirector  # noqa: E402
-from .chain_en import MiniMaxH3ChainDirectorEN  # noqa: E402
-
-NODE_CLASS_MAPPINGS["MiniMaxH3ChainDirector"] = MiniMaxH3ChainDirector
-NODE_DISPLAY_NAME_MAPPINGS["MiniMaxH3ChainDirector"] = "MiniMax H3 Chain Director｜链式导演台（多段拼接）"
-NODE_CLASS_MAPPINGS["MiniMaxH3ChainDirectorEN"] = MiniMaxH3ChainDirectorEN
-NODE_DISPLAY_NAME_MAPPINGS["MiniMaxH3ChainDirectorEN"] = "MiniMax H3 Chain Director"
+NODE_CLASS_MAPPINGS["ConcatImageBatches"] = ConcatImageBatches
+NODE_DISPLAY_NAME_MAPPINGS["ConcatImageBatches"] = "Concat Image Batches"
